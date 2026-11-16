@@ -34,3 +34,7 @@ class Board:
 	
 	def undo_move(self, move):
 		pass
+
+
+	def get_neighbors(self, square):
+		pass
