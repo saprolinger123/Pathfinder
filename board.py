@@ -2,21 +2,18 @@ class Board:
 
 	def __init__(self):
 		self.turn = 0
+		
+		self.TOP = 1
+		self.RIGHT = 2
+		self.BOTTOM = 3
+		self.LEFT = 4
 
-		self.vertical_fence_slots = []
-		self.horizontal_fence_slots = []
+		self.fences = [] # fence format: [x1, y1, x2, y2, side]
 
 		self.player_1_pos = [4, 8]
 		self.player_2_pos = [4, 0]
 		self.player_1_fences = 10
 		self.player_2_fences = 10
-
-		for i in range(8):
-			vertical_fence_slots.append([])
-			horizontal_fence_slots.append([])
-			for j in range(9):
-				vertical_fence_slots[i].append(0)
-				horizontal_fence_slots[i].append(0)
 
 	def check_win(self):
 		if self.player_1_pos[1] == 0:
@@ -26,3 +23,5 @@ class Board:
 			return 2
 
 		return 0
+
+	def 
