@@ -1,7 +1,7 @@
 class Board:
 
 	def __init__(self):
-		self.turn = 0
+		self.turn = 1
 		
 		self.TOP = 1
 		self.RIGHT = 2
@@ -24,4 +24,13 @@ class Board:
 
 		return 0
 
-	def 
+	def get_legal_moves(self):
+		pass
+
+	
+	def make_move(self, move):
+		pass
+
+	
+	def undo_move(self, move):
+		pass
