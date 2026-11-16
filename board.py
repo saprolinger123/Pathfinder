@@ -17,3 +17,12 @@ class Board:
 			for j in range(9):
 				vertical_fence_slots[i].append(0)
 				horizontal_fence_slots[i].append(0)
+
+	def check_win(self):
+		if self.player_1_pos[1] == 0:
+			return 1
+
+		elif self.player_2_pos[1] == 8:
+			return 2
+
+		return 0
