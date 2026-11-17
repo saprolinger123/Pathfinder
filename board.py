@@ -86,9 +86,9 @@ class Board:
 
 		candidates = [
 			(square[0] + 1, square[1]),
-			(square[0], square[1] + 1),
+			(square[0], square[1] - 1),
 			(square[0] - 1, square[1]),
-			(square[0], square[1] - 1)
+			(square[0], square[1] + 1)
 		]
 
 		neighbors = []
