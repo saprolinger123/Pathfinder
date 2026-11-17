@@ -12,7 +12,7 @@ def minmax(board, current_depth, max_depth, is_maximizing, alpha = -float("inf")
 	moves = board.get_legal_moves()
 	best_eval = float("inf") * (-1 if is_maximizing else 1)
 	for move in moves:
-		board.make_move(move)
+		board.make_move(*move)
 		move_eval = minmax(board, current_depth + 1, max_depth, not is_maximizing, alpha, beta)
 		if is_maximizing:
 			if move_eval > best_eval:
@@ -25,7 +25,7 @@ def minmax(board, current_depth, max_depth, is_maximizing, alpha = -float("inf")
 				beta = min(best_eval, beta)
 
 
-		board.undo_move(move)
+		board.undo_move(*move)
 	
 		if alpha >= beta:
 			break
