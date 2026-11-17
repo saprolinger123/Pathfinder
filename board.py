@@ -29,10 +29,48 @@ class Board:
 		pass
 
 	
-	def make_move(self, move):
-		pass
+	def make_move(self, move_type, move):
+		# move_type: "move", "fence", or "jump"
+		# player move format: self.TOP, self.RIGHT, self.BOTTOM, or self.LEFT. 
+		# fence move format is the same as the fence format: [part_1, part_2], and the part format is [x, y, side].
+		# jump move format: [move_1, move_2]
 
-	
+		if self.turn == 1:
+			current_player_pos = self.player_1_pos
+		else:
+			current_player_pos = self.player_2_pos
+
+		if move_type == "move":
+			if move == self.TOP:
+				current_player_pos[1] -= 1
+			elif move == self.RIGHT:
+				current_player_pos[0] += 1
+			elif move == self.BOTTOM:
+				current_player_pos[1] += 1
+			else:
+				current_player_pos[0] -= 1
+
+		elif move_type == "fence":
+			if self.turn == 1:
+				player_1_fences -= 1
+			else:
+				player_2_fences -= 1
+			self.fences.append(move)
+			self.fence_parts.append(move[0])
+			self.fence_parts.append(move[1])
+		else:
+			for movement in move:
+				if movement == self.TOP:
+					current_player_pos[1] -= 1
+				elif movement == self.RIGHT:
+					current_player_pos[0] += 1
+				elif movement == self.BOTTOM:
+					current_player_pos[1] += 1
+				else:
+					current_player_pos[0] -= 1
+
+		self.turn = 2 - self.turn
+
 	def undo_move(self, move):
 		pass
 
