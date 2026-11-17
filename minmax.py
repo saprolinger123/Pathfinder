@@ -1,3 +1,4 @@
+from simple_eval import simple_eval
 def minmax(board, current_depth, max_depth, is_maximizing, alpha = -float("inf"), beta = float("inf")):
 
 	if board.check_win() == 1:
@@ -6,7 +7,7 @@ def minmax(board, current_depth, max_depth, is_maximizing, alpha = -float("inf")
 		return -1
 
 	if current_depth == max_depth:
-		return board.simple_eval()
+		return simple_eval(board)
 
 	moves = board.get_legal_moves()
 	best_eval = float("inf") * (-1 if is_maximizing else 1)
