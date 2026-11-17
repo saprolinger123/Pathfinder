@@ -69,7 +69,7 @@ class Board:
 				else:
 					current_player_pos[0] -= 1
 
-		self.turn = 2 - self.turn
+		self.turn = 3 - self.turn
 
 	def undo_move(self, move):
 		pass
