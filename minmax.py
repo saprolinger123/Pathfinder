@@ -17,12 +17,12 @@ def minmax(board, current_depth, max_depth, is_maximizing, alpha = -float("inf")
 		if is_maximizing:
 			if move_eval > best_eval:
 				best_eval = move_eval
-				alpha = move_eval
+				alpha = max(best_eval, alpha)
 		
 		else:
 			if move_eval < best_eval:
 				best_eval = move_eval
-				beta = move_eval
+				beta = min(best_eval, beta)
 
 
 		board.undo_move(move)
