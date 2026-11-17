@@ -52,9 +52,9 @@ class Board:
 
 		elif move_type == "fence":
 			if self.turn == 1:
-				player_1_fences -= 1
+				self.player_1_fences -= 1
 			else:
-				player_2_fences -= 1
+				self.player_2_fences -= 1
 			self.fences.append(move)
 			self.fence_parts.append(move[0])
 			self.fence_parts.append(move[1])
