@@ -26,7 +26,15 @@ class Board:
 		return 0
 
 	def get_legal_moves(self):
-		pass
+		# First, it gets any legal jump moves. Then, it gets legal pawn moves, using get_neighbors. Finally, it gets all the fence moves. The order is important, as it makes alpha-beta pruning more effective.
+
+		legal_jump_moves = []
+
+		legal_pawn_moves = []
+
+		legal_fence_moves = []
+
+		return legal_jump_moves + legal_pawn_moves + legal_fence_moves
 
 	
 	def make_move(self, move_type, move):
