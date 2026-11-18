@@ -71,8 +71,42 @@ class Board:
 
 		self.turn = 3 - self.turn
 
-	def undo_move(self, move):
-		pass
+	def undo_move(self, move_type, move):
+		if self.turn == 1:
+			current_player_pos = self.player_1_pos
+		else:
+			current_player_pos = self.player_2_pos
+
+		if move_type == "move":
+			if move == self.TOP:
+				current_player_pos[1] += 1
+			elif move == self.RIGHT:
+				current_player_pos[0] -= 1
+			elif move == self.BOTTOM:
+				current_player_pos[1] -= 1
+			else:
+				current_player_pos[0] += 1
+
+		elif move_type == "fence":
+			if self.turn == 1:
+				self.player_1_fences += 1
+			else:
+				self.player_2_fences += 1
+			self.fences.remove(move)
+			self.fence_parts.remove(move[0])
+			self.fence_parts.remove(move[1])
+		else:
+			for movement in move:
+				if movement == self.TOP:
+					current_player_pos[1] += 1
+				elif movement == self.RIGHT:
+					current_player_pos[0] -= 1
+				elif movement == self.BOTTOM:
+					current_player_pos[1] -= 1
+				else:
+					current_player_pos[0] += 1
+
+		self.turn = 3 - self.turn
 
 
 	def get_neighbors(self, square):
