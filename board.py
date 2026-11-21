@@ -16,6 +16,53 @@ class Board:
 		self.player_1_fences = 10
 		self.player_2_fences = 10
 
+		self.paths = {1: None, 2: None}
+		self.ply = 0
+
+	def _invalidate_paths(self):
+		self.paths = {1: None, 2: None}
+
+	def get_path_to_goal(self, start, player, fence_parts=None):
+		if fence_parts is None:
+			fence_parts = self.fence_parts
+			if self.paths[player] is not None:
+				return self.paths[player]
+
+		goal_row = 0 if player == 1 else 8
+		queue = [tuple(start)]
+		visited = {tuple(start)}
+		parents = {tuple(start): None}
+		directions = [(self.TOP, 0, -1), (self.RIGHT, 1, 0),
+					  (self.BOTTOM, 0, 1), (self.LEFT, -1, 0)]
+
+		while queue:
+			square = queue.pop(0)
+			if square[1] == goal_row:
+				break
+
+			for direction, dx, dy in directions:
+				neighbor = (square[0] + dx, square[1] + dy)
+				if (neighbor not in visited
+						and self.in_bounds(neighbor)
+						and not self.is_blocked(square, direction, fence_parts)):
+					visited.add(neighbor)
+					parents[neighbor] = square
+					queue.append(neighbor)
+
+		if square[1] != goal_row:
+			path = None
+		else:
+			path = []
+			while square is not None:
+				path.append(list(square))
+				square = parents[square]
+			path.reverse()
+
+		if fence_parts is self.fence_parts:
+			self.paths[player] = path
+
+		return path
+
 	def check_win(self):
 		if self.player_1_pos[1] == 0:
 			return 1
@@ -80,6 +127,11 @@ class Board:
 					if self.is_fence_legal(fence):
 						legal_fence_moves.append(("fence", fence))
 
+			legal_fence_moves.sort(key=lambda move: (
+				abs(move[1][0][0] + move[1][1][0] - 8)
+				+ abs(move[1][0][1] + move[1][1][1] - 8)
+			))
+
 		return legal_jump_moves + legal_pawn_moves + legal_fence_moves
 
 
@@ -117,41 +169,45 @@ class Board:
 
 
 	def has_path_to_goal(self, start, player, fence_parts):
-		goal_row = 0 if player == 1 else 8
-		visited = {tuple(start)}
-		queue = [start]
-		directions = (
-			(self.TOP, (0, -1)),
-			(self.RIGHT, (1, 0)),
-			(self.BOTTOM, (0, 1)),
-			(self.LEFT, (-1, 0))
-		)
+		return self.get_path_to_goal(start, player, fence_parts) is not None
 
-		while queue:
-			square = queue.pop(0)
-			if square[1] == goal_row:
-				return True
-			for direction, (dx, dy) in directions:
-				neighbor = [square[0] + dx, square[1] + dy]
-				if (self.in_bounds(neighbor)
-						and not self.is_blocked(square, direction, fence_parts)
-						and tuple(neighbor) not in visited):
-					visited.add(tuple(neighbor))
-					queue.append(neighbor)
+
+	def fence_crosses_path(self, fence, path):
+		if path is None:
+			return False
+		for square, neighbor in zip(path, path[1:]):
+			dx = neighbor[0] - square[0]
+			dy = neighbor[1] - square[1]
+			direction = ((0, -1, self.TOP), (1, 0, self.RIGHT),
+						 (0, 1, self.BOTTOM), (-1, 0, self.LEFT))
+			for ddx, ddy, move_direction in direction:
+				if dx == ddx and dy == ddy:
+					if self.is_blocked(square, move_direction, fence):
+						return True
+					break
 		return False
 
 
 	def is_fence_legal(self, fence):
 		if any(part in self.fence_parts for part in fence) or self.fence_crosses_existing(fence):
 			return False
+		if self.ply < 3:
+			return True
+
+		path_1 = self.get_path_to_goal(self.player_1_pos, 1)
+		path_2 = self.get_path_to_goal(self.player_2_pos, 2)
+		crosses_1 = self.fence_crosses_path(fence, path_1)
+		crosses_2 = self.fence_crosses_path(fence, path_2)
+		if not crosses_1 and not crosses_2:
+			return True
 
 		fence_parts = self.fence_parts + fence
-		return (
-			self.has_path_to_goal(self.player_1_pos, 1, fence_parts)
-			and self.has_path_to_goal(self.player_2_pos, 2, fence_parts)
-		)
+		if crosses_1 and not self.has_path_to_goal(self.player_1_pos, 1, fence_parts):
+			return False
+		if crosses_2 and not self.has_path_to_goal(self.player_2_pos, 2, fence_parts):
+			return False
+		return True
 
-	
 	def make_move(self, move_type, move):
 		# move_type: "move", "fence", or "jump"
 		# player move format: self.TOP, self.RIGHT, self.BOTTOM, or self.LEFT. 
@@ -192,6 +248,9 @@ class Board:
 				else:
 					current_player_pos[0] -= 1
 
+		self._invalidate_paths()
+		self.ply += 1
+
 		self.turn = 3 - self.turn
 
 	def undo_move(self, move_type, move):
@@ -229,6 +288,9 @@ class Board:
 					current_player_pos[1] -= 1
 				else:
 					current_player_pos[0] += 1
+
+		self._invalidate_paths()
+		self.ply -= 1
 
 		self.turn = 3 - self.turn
 
