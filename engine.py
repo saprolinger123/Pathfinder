@@ -2,9 +2,12 @@ from board import Board
 from minmax import minmax
 
 class Engine:
+
+    def __init__(self):
+        self.position_evaluations = {}
     
     def analyze(self, board, depth):
-        return minmax(board, 0, depth, True)
+        return minmax(self, board, 0, depth, True)
 
     def get_best_move(self, board, depth):
         best_eval = -float("inf") if board.turn == 1 else float("inf")
@@ -12,7 +15,7 @@ class Engine:
 
         for move in board.get_legal_moves():
             board.make_move(*move)
-            move_eval = minmax(board, 1, depth, board.turn == 1)
+            move_eval = minmax(self, board, 1, depth, board.turn == 1)
             board.undo_move(*move)
 
             if (move_eval > best_eval and board.turn == 1) or (move_eval < best_eval and board.turn == 2):
