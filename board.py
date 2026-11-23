@@ -16,17 +16,21 @@ class Board:
 		self.player_1_fences = 10
 		self.player_2_fences = 10
 
-		self.paths = {1: None, 2: None}
+		self.path_cache = {}
 		self.ply = 0
-
-	def _invalidate_paths(self):
-		self.paths = {1: None, 2: None}
 
 	def get_path_to_goal(self, start, player, fence_parts=None):
 		if fence_parts is None:
 			fence_parts = self.fence_parts
-			if self.paths[player] is not None:
-				return self.paths[player]
+
+		cache_key = (
+			tuple(start),
+			player,
+			frozenset(tuple(part) for part in fence_parts),
+		)
+		if cache_key in self.path_cache:
+			cached_path = self.path_cache[cache_key]
+			return None if cached_path is None else [list(square) for square in cached_path]
 
 		goal_row = 0 if player == 1 else 8
 		queue = [tuple(start)]
@@ -58,8 +62,9 @@ class Board:
 				square = parents[square]
 			path.reverse()
 
-		if fence_parts is self.fence_parts:
-			self.paths[player] = path
+		self.path_cache[cache_key] = (
+			None if path is None else tuple(tuple(square) for square in path)
+		)
 
 		return path
 
@@ -248,7 +253,6 @@ class Board:
 				else:
 					current_player_pos[0] -= 1
 
-		self._invalidate_paths()
 		self.ply += 1
 
 		self.turn = 3 - self.turn
@@ -289,7 +293,6 @@ class Board:
 				else:
 					current_player_pos[0] += 1
 
-		self._invalidate_paths()
 		self.ply -= 1
 
 		self.turn = 3 - self.turn
