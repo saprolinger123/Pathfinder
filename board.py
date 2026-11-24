@@ -27,18 +27,40 @@ class Board:
 		else:
 			fence_part_set = frozenset(tuple(part) for part in fence_parts)
 
-		cache_key = (
+		original_key = (
 			tuple(start),
 			player,
-			fence_part_set,
+			tuple(sorted(fence_part_set)),
 		)
+		mirrored_start = (8 - start[0], start[1])
+		mirrored_fences = frozenset(
+			(8 - x, y, side) for x, y, side in fence_part_set
+		)
+		mirrored_key = (
+			mirrored_start,
+			player,
+			tuple(sorted(mirrored_fences)),
+		)
+		cache_key = min(original_key, mirrored_key)
+		canonical_is_mirrored = original_key != mirrored_key and cache_key == mirrored_key
+
 		if cache_key in self.path_cache:
-			return self.path_cache[cache_key]
+			path = self.path_cache[cache_key]
+			if canonical_is_mirrored and path is not None:
+				path = tuple((8 - square[0], square[1]) for square in path)
+			return path
 
 		goal_row = 0 if player == 1 else 8
-		queue = [tuple(start)]
-		visited = {tuple(start)}
-		parents = {tuple(start): None}
+		if canonical_is_mirrored:
+			search_start = mirrored_start
+			search_fence_part_set = mirrored_fences
+		else:
+			search_start = tuple(start)
+			search_fence_part_set = fence_part_set
+
+		queue = [tuple(search_start)]
+		visited = {tuple(search_start)}
+		parents = {tuple(search_start): None}
 		directions = [(self.TOP, 0, -1), (self.RIGHT, 1, 0),
 					  (self.BOTTOM, 0, 1), (self.LEFT, -1, 0)]
 
@@ -51,7 +73,7 @@ class Board:
 				neighbor = (square[0] + dx, square[1] + dy)
 				if (neighbor not in visited
 						and self.in_bounds(neighbor)
-						and not self.is_blocked(square, direction, fence_part_set)):
+						and not self.is_blocked(square, direction, search_fence_part_set)):
 					visited.add(neighbor)
 					parents[neighbor] = square
 					queue.append(neighbor)
@@ -67,6 +89,8 @@ class Board:
 
 		path = None if path is None else tuple(path)
 		self.path_cache[cache_key] = path
+		if canonical_is_mirrored and path is not None:
+			return tuple((8 - square[0], square[1]) for square in path)
 		return path
 
 	def get_path_to_goal(self, start, player, fence_parts=None):
@@ -202,10 +226,15 @@ class Board:
 		if path is None:
 			return False
 
-		cache_key = (
-			tuple(tuple(part) for part in fence),
+		original_key = (
+			tuple(sorted(tuple(part) for part in fence)),
 			tuple(tuple(square) for square in path),
 		)
+		mirrored_key = (
+			tuple(sorted(tuple((8 - part[0], part[1], part[2])) for part in fence)),
+			tuple(tuple((8 - square[0], square[1])) for square in path),
+		)
+		cache_key = min(original_key, mirrored_key)
 		if cache_key in self.fence_crosses_path_cache:
 			return self.fence_crosses_path_cache[cache_key]
 
