@@ -17,6 +17,7 @@ class Board:
 		self.player_2_fences = 10
 
 		self.path_cache = {}
+		self.fence_crosses_path_cache = {}
 		self.ply = 0
 
 	def get_path_to_goal(self, start, player, fence_parts=None):
@@ -166,6 +167,7 @@ class Board:
 
 
 	def fence_crosses_existing(self, fence):
+		
 		x, y, side = fence[0]
 		for existing in self.fences:
 			existing_x, existing_y, existing_side = existing[0]
@@ -185,6 +187,14 @@ class Board:
 	def fence_crosses_path(self, fence, path):
 		if path is None:
 			return False
+
+		cache_key = (
+			tuple(tuple(part) for part in fence),
+			tuple(tuple(square) for square in path),
+		)
+		if cache_key in self.fence_crosses_path_cache:
+			return self.fence_crosses_path_cache[cache_key]
+
 		for square, neighbor in zip(path, path[1:]):
 			dx = neighbor[0] - square[0]
 			dy = neighbor[1] - square[1]
@@ -193,8 +203,10 @@ class Board:
 			for ddx, ddy, move_direction in direction:
 				if dx == ddx and dy == ddy:
 					if self.is_blocked(square, move_direction, fence):
+						self.fence_crosses_path_cache[cache_key] = True
 						return True
 					break
+		self.fence_crosses_path_cache[cache_key] = False
 		return False
 
 
