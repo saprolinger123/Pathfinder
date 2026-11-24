@@ -124,20 +124,25 @@ class Board:
 			for x in range(8):
 				for y in range(1, 9):
 					fence = [[x, y, self.TOP], [x + 1, y, self.TOP]]
-					if self.is_fence_legal(fence):
-						legal_fence_moves.append(("fence", fence))
+					is_legal, priority = self.is_fence_legal(fence)
+					if is_legal:
+						legal_fence_moves.append((priority, ("fence", fence)))
 
 				for y in range(8):
 					fence = [[x, y, self.RIGHT], [x, y + 1, self.RIGHT]]
-					if self.is_fence_legal(fence):
-						legal_fence_moves.append(("fence", fence))
+					is_legal, priority = self.is_fence_legal(fence)
+					if is_legal:
+						legal_fence_moves.append((priority, ("fence", fence)))
 
 			legal_fence_moves.sort(key=lambda move: (
-				abs(move[1][0][0] + move[1][1][0] - 8)
-				+ abs(move[1][0][1] + move[1][1][1] - 8)
+				move[0] != "priority",
+				abs(move[1][1][0][0] + move[1][1][1][0] - 8)
+				+ abs(move[1][1][0][1] + move[1][1][1][1] - 8)
 			))
 
-		return legal_jump_moves + legal_pawn_moves + legal_fence_moves
+		return legal_jump_moves + legal_pawn_moves + [
+			move for _, move in legal_fence_moves
+		]
 
 
 	def in_bounds(self, square):
@@ -195,23 +200,25 @@ class Board:
 
 	def is_fence_legal(self, fence):
 		if any(part in self.fence_parts for part in fence) or self.fence_crosses_existing(fence):
-			return False
-		if self.ply < 3:
-			return True
+			return [False, "normal"]
 
 		path_1 = self.get_path_to_goal(self.player_1_pos, 1)
 		path_2 = self.get_path_to_goal(self.player_2_pos, 2)
 		crosses_1 = self.fence_crosses_path(fence, path_1)
 		crosses_2 = self.fence_crosses_path(fence, path_2)
+		priority = "priority" if crosses_1 or crosses_2 else "normal"
+		if self.ply < 3:
+			return [True, priority]
+
 		if not crosses_1 and not crosses_2:
-			return True
+			return [True, priority]
 
 		fence_parts = self.fence_parts + fence
 		if crosses_1 and not self.has_path_to_goal(self.player_1_pos, 1, fence_parts):
-			return False
+			return [False, priority]
 		if crosses_2 and not self.has_path_to_goal(self.player_2_pos, 2, fence_parts):
-			return False
-		return True
+			return [False, priority]
+		return [True, priority]
 
 	def make_move(self, move_type, move):
 		# move_type: "move", "fence", or "jump"
