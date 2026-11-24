@@ -18,20 +18,22 @@ class Board:
 
 		self.path_cache = {}
 		self.fence_crosses_path_cache = {}
+		self._fence_part_set = frozenset()
 		self.ply = 0
 
-	def get_path_to_goal(self, start, player, fence_parts=None):
+	def _get_path_to_goal(self, start, player, fence_parts=None):
 		if fence_parts is None:
-			fence_parts = self.fence_parts
+			fence_part_set = self._fence_part_set
+		else:
+			fence_part_set = frozenset(tuple(part) for part in fence_parts)
 
 		cache_key = (
 			tuple(start),
 			player,
-			frozenset(tuple(part) for part in fence_parts),
+			fence_part_set,
 		)
 		if cache_key in self.path_cache:
-			cached_path = self.path_cache[cache_key]
-			return None if cached_path is None else [list(square) for square in cached_path]
+			return self.path_cache[cache_key]
 
 		goal_row = 0 if player == 1 else 8
 		queue = [tuple(start)]
@@ -49,7 +51,7 @@ class Board:
 				neighbor = (square[0] + dx, square[1] + dy)
 				if (neighbor not in visited
 						and self.in_bounds(neighbor)
-						and not self.is_blocked(square, direction, fence_parts)):
+						and not self.is_blocked(square, direction, fence_part_set)):
 					visited.add(neighbor)
 					parents[neighbor] = square
 					queue.append(neighbor)
@@ -59,15 +61,21 @@ class Board:
 		else:
 			path = []
 			while square is not None:
-				path.append(list(square))
+				path.append(square)
 				square = parents[square]
 			path.reverse()
 
-		self.path_cache[cache_key] = (
-			None if path is None else tuple(tuple(square) for square in path)
-		)
-
+		path = None if path is None else tuple(path)
+		self.path_cache[cache_key] = path
 		return path
+
+	def get_path_to_goal(self, start, player, fence_parts=None):
+		path = self._get_path_to_goal(start, player, fence_parts)
+		return None if path is None else [list(square) for square in path]
+
+	def get_path_length_to_goal(self, start, player):
+		path = self._get_path_to_goal(start, player)
+		return None if path is None else len(path) - 1
 
 	def check_win(self):
 		if self.player_1_pos[1] == 0:
@@ -122,16 +130,20 @@ class Board:
 		legal_fence_moves = []
 		fence_count = self.player_1_fences if self.turn == 1 else self.player_2_fences
 		if fence_count > 0:
+			paths = (
+				self._get_path_to_goal(self.player_1_pos, 1),
+				self._get_path_to_goal(self.player_2_pos, 2),
+			)
 			for x in range(8):
 				for y in range(1, 9):
 					fence = [[x, y, self.TOP], [x + 1, y, self.TOP]]
-					is_legal, priority = self.is_fence_legal(fence)
+					is_legal, priority = self.is_fence_legal(fence, paths)
 					if is_legal:
 						legal_fence_moves.append((priority, ("fence", fence)))
 
 				for y in range(8):
 					fence = [[x, y, self.RIGHT], [x, y + 1, self.RIGHT]]
-					is_legal, priority = self.is_fence_legal(fence)
+					is_legal, priority = self.is_fence_legal(fence, paths)
 					if is_legal:
 						legal_fence_moves.append((priority, ("fence", fence)))
 
@@ -152,7 +164,7 @@ class Board:
 
 	def is_blocked(self, square, direction, fence_parts=None):
 		if fence_parts is None:
-			fence_parts = self.fence_parts
+			fence_parts = self._fence_part_set
 
 		x, y = square
 		if direction == self.RIGHT:
@@ -163,6 +175,8 @@ class Board:
 			part = [x - 1, y, self.RIGHT]
 		else:
 			part = [x, y + 1, self.TOP]
+		if isinstance(fence_parts, (set, frozenset)):
+			return tuple(part) in fence_parts
 		return part in fence_parts
 
 
@@ -181,7 +195,7 @@ class Board:
 
 
 	def has_path_to_goal(self, start, player, fence_parts):
-		return self.get_path_to_goal(start, player, fence_parts) is not None
+		return self._get_path_to_goal(start, player, fence_parts) is not None
 
 
 	def fence_crosses_path(self, fence, path):
@@ -210,12 +224,16 @@ class Board:
 		return False
 
 
-	def is_fence_legal(self, fence):
+	def is_fence_legal(self, fence, paths=None):
 		if any(part in self.fence_parts for part in fence) or self.fence_crosses_existing(fence):
 			return [False, "normal"]
 
-		path_1 = self.get_path_to_goal(self.player_1_pos, 1)
-		path_2 = self.get_path_to_goal(self.player_2_pos, 2)
+		if paths is None:
+			paths = (
+				self._get_path_to_goal(self.player_1_pos, 1),
+				self._get_path_to_goal(self.player_2_pos, 2),
+			)
+		path_1, path_2 = paths
 		crosses_1 = self.fence_crosses_path(fence, path_1)
 		crosses_2 = self.fence_crosses_path(fence, path_2)
 		priority = "priority" if crosses_1 or crosses_2 else "normal"
@@ -261,6 +279,9 @@ class Board:
 			self.fences.append(move)
 			self.fence_parts.append(move[0])
 			self.fence_parts.append(move[1])
+			self._fence_part_set = self._fence_part_set.union(
+				(tuple(move[0]), tuple(move[1]))
+			)
 		else:
 			for movement in move:
 				if movement == self.TOP:
@@ -301,6 +322,9 @@ class Board:
 			self.fences.remove(move)
 			self.fence_parts.remove(move[0])
 			self.fence_parts.remove(move[1])
+			self._fence_part_set = self._fence_part_set.difference(
+				(tuple(move[0]), tuple(move[1]))
+			)
 		else:
 			for movement in move:
 				if movement == self.TOP:
