@@ -1,4 +1,4 @@
-from simple_eval import simple_eval
+from core.simple_eval import simple_eval
 def minmax(board, current_depth, max_depth, is_maximizing, alpha = -float("inf"), beta = float("inf")):
 	if board.check_win() == 1:
 		return 1

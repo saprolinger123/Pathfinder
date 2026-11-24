@@ -1,5 +1,5 @@
-from board import Board
-from minmax import minmax
+from core.board import Board
+from core.minmax import minmax
 
 class Engine:
 
