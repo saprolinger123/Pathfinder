@@ -21,6 +21,11 @@ class Board:
 		self._fence_part_set = frozenset()
 		self.ply = 0
 
+	def _mirror_fence_part(self, part):
+		x, y, side = part
+		mirrored_x = 7 - x if side == self.RIGHT else 8 - x
+		return (mirrored_x, y, side)
+
 	def _get_path_to_goal(self, start, player, fence_parts=None):
 		if fence_parts is None:
 			fence_part_set = self._fence_part_set
@@ -34,7 +39,7 @@ class Board:
 		)
 		mirrored_start = (8 - start[0], start[1])
 		mirrored_fences = frozenset(
-			(8 - x, y, side) for x, y, side in fence_part_set
+			self._mirror_fence_part(part) for part in fence_part_set
 		)
 		mirrored_key = (
 			mirrored_start,
@@ -230,11 +235,7 @@ class Board:
 			tuple(sorted(tuple(part) for part in fence)),
 			tuple(tuple(square) for square in path),
 		)
-		mirrored_key = (
-			tuple(sorted(tuple((8 - part[0], part[1], part[2])) for part in fence)),
-			tuple(tuple((8 - square[0], square[1])) for square in path),
-		)
-		cache_key = min(original_key, mirrored_key)
+		cache_key = original_key
 		if cache_key in self.fence_crosses_path_cache:
 			return self.fence_crosses_path_cache[cache_key]
 
