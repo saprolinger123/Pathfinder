@@ -43,3 +43,19 @@ class Engine:
                 beta = min(beta, best_eval)
 
         return best_move
+
+    def rate_move(self, board, move, depth):
+        start_eval = self.analyze(board, depth)
+        board.make_move(*move)
+        move_eval = self.analyze(board, depth-1)
+        board.undo_move(*move)
+        move_rating = abs(start_eval - move_eval)
+
+        return move_rating
+
+    def get_random_move(self, board):
+        legal_moves = board.get_legal_moves()
+        if not legal_moves:
+            return None
+        import random
+        return random.choice(legal_moves)
