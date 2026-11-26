@@ -11,4 +11,4 @@ def _distance_to_goal(board, start, goal_row):
 def simple_eval(board):
 	player_1_distance = _distance_to_goal(board, board.player_1_pos, 0)
 	player_2_distance = _distance_to_goal(board, board.player_2_pos, 8)
-	return (player_2_distance - player_1_distance) / MAX_PATH_LENGTH
+	return (player_2_distance - player_1_distance) / MAX_PATH_LENGTH + 0.01 * board.player_1_fences - 0.01 * board.player_2_fences
